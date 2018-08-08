@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import sys, getopt
 
@@ -11,6 +10,7 @@ from six.moves import queue as Queue
 from threading import Thread
 import json
 import time
+import MySQLdb
 
 # Setting timeout
 TIMEOUT = 10
@@ -127,8 +127,13 @@ class CrawlerScheduler(object):
                 res = requests.get(url, headers=HEADERS)
                 if not res: continue
                 dytk = re.findall("dytk: '(.*)'", res.content.decode('utf-8'))
+                nickname = re.findall('<p class="nickname">(.*)</p><p class="shortid">', res.content.decode('utf-8'))
+                uid = re.findall('uid: "(.*)",', res.content.decode('utf-8'))
                 if len(dytk):
                     dytk.insert(0, user_id[0])
+                    dytk.append(nickname[0])
+                    dytk.append(items[i])
+                    dytk.append(uid[0])
                     self.numbers.append(dytk)
 
             if re.search('share/challenge', url):
@@ -197,7 +202,10 @@ class CrawlerScheduler(object):
         if len(params) < 2: return
         number = params[0]
         dytk = params[1]
-        video_count = self._download_user_media(number, dytk)
+        nickname = params[2]
+        share_url = params[3]
+        uid = params[4] 
+        video_count = self._download_user_media(number, dytk, nickname, share_url, uid)
         self.queue.join()
         print("\nAweme number %s, video number %s\n\n" % (number, str(video_count)))
         print("\nFinish Downloading All the videos from %s\n\n" % number)
@@ -252,17 +260,19 @@ class CrawlerScheduler(object):
                 '&'.join([key + '=' + favorite_video_params[key] for key in favorite_video_params]))
             res = requests.get(url, headers=HEADERS)
             contentJson = json.loads(res.content.decode('utf-8'))
+            print(url)
+            print(contentJson)
             favorite_list = contentJson.get('aweme_list', [])
-            for aweme in favorite_list:
-                video_count += 1
-                self._join_download_queue(aweme, favorite_folder)
+            # for aweme in favorite_list:
+            #     video_count += 1
+            #     self._join_download_queue(aweme, favorite_folder)
             if contentJson.get('has_more') == 1:
                 max_cursor = contentJson.get('max_cursor')
             else:
                 break
         return video_count
 
-    def _download_user_media(self, user_id, dytk):
+    def _download_user_media(self, user_id, dytk, nickname, share_url, uid):
         current_folder = os.getcwd()
         target_folder = os.path.join(current_folder, 'download/%s' % user_id)
         if not os.path.isdir(target_folder):
@@ -292,14 +302,56 @@ class CrawlerScheduler(object):
             print(url)
             print(res.content.decode('utf-8'))
             contentJson = json.loads(res.content.decode('utf-8'))
-            aweme_list = contentJson.get('aweme_list', [])
-            for aweme in aweme_list:
+
+            sql = "select * from share_urls where url = '%s'" % share_url
+            urlinfo = db_select(sql)
+
+            for item in contentJson['aweme_list']:
                 video_count += 1
-                self._join_download_queue(aweme, target_folder)
+
+                digg_count = str(item['statistics']['digg_count'])
+                if 'w' in digg_count:
+                    digg_count = int(float(digg_count.replace('w', ''))*10000)
+
+                sql = """
+                    insert into videos 
+                        (user_id, aweme_id, video_url, uri, video_image, height, width, digg_count, share_url_id, dyname, dyaccount, tags_id) 
+                    values 
+                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, '%s', '%s', %s)
+                """ % (
+                    user_id,
+                    item['statistics']['aweme_id'],
+                    item['video']['play_addr']['url_list'][0],
+                    item['video']['play_addr']['uri'],
+                    item['video']['cover']['url_list'][0],
+                    item['video']['height'],
+                    item['video']['width'],
+                    digg_count,
+                    urlinfo[0][0],
+                    nickname,
+                    '',
+                    urlinfo[0][7]
+                )
+                print(sql)
+                try:
+                    db_update(sql)
+                except:
+                    pass
+
+            time.sleep(5)
+
+            # aweme_list = contentJson.get('aweme_list', [])
+            # for aweme in aweme_list:
+            #     video_count += 1
+            #     self._join_download_queue(aweme, target_folder)
             if contentJson.get('has_more') == 1:
                 max_cursor = contentJson.get('max_cursor')
             else:
                 break
+
+        sql = "UPDATE share_urls SET dyname='%s', dyid='%s', video_num=%s, status=2 WHERE url = '%s' " % (nickname, uid, video_count, share_url)
+        db_update(sql)
+
         if not noFavorite:
             favorite_folder = target_folder + '/favorite'
             video_count = self.__download_favorite_media(user_id, dytk, signature, favorite_folder, video_count)
@@ -431,37 +483,93 @@ def parse_sites(fileName):
     return numbers
 
 
-noFavorite = False
+db_config = {
+    "host": "39.108.53.90",
+    "user": "root",
+    "passwd": "lupin2008cn",
+    "db": "dy-video"
+}
+
+
+def db_select(sql):
+    db = MySQLdb.connect(
+        host=db_config['host'],
+        user=db_config['user'],
+        passwd=db_config['passwd'],
+        db=db_config['db'],
+    )
+    cur = db.cursor()
+    cur.execute(sql)
+
+    ret = []
+    for row in cur.fetchall():
+        ret.append(row)
+    db.close()
+    return ret
+
+
+def db_update(sql):
+    db = MySQLdb.connect(
+        host=db_config['host'],
+        user=db_config['user'],
+        passwd=db_config['passwd'],
+        db=db_config['db'],
+    )
+    cur = db.cursor()
+    cur.execute(sql)
+    db.commit()
+    db.close()
+    return None
+
+
+noFavorite = True
 
 if __name__ == "__main__":
-    content, opts, args = None, None, []
 
-    try:
-        if len(sys.argv) >= 2:
-            opts, args = getopt.getopt(sys.argv[1:], "hi:o:", ["no-favorite"])
-    except getopt.GetoptError as err:
-        usage()
-        sys.exit(2)
+    while True:
+        contents = db_select("select * from share_urls WHERE status=1 and type=1")
+        if contents:
+            for row in contents:
+                content = [row[1]]
+                print(content)
+                CrawlerScheduler(content)
+                print('sleep 10 seconds... ')
+                time.sleep(10)
 
-    if not args:
-        # check the sites file
-        filename = "share-url.txt"
-        if os.path.exists(filename):
-            content = parse_sites(filename)
-        else:
-            usage()
-            sys.exit(1)
-    else:
-        content = (args[0] if args else '').split(",")
+        print('sleep 60 seconds out... ')
+        time.sleep(60)
 
-    if len(content) == 0 or content[0] == "":
-        usage()
-        sys.exit(1)
 
-    if opts:
-        for o, val in opts:
-            if o in ("-nf", "--no-favorite"):
-                noFavorite = True
-                break
-    # print(content)
-    CrawlerScheduler(content)
+
+# if __name__ == "__main__":
+#     content, opts, args = None, None, []
+
+#     try:
+#         if len(sys.argv) >= 2:
+#             opts, args = getopt.getopt(sys.argv[1:], "hi:o:", ["no-favorite"])
+#     except getopt.GetoptError as err:
+#         usage()
+#         sys.exit(2)
+
+#     if not args:
+#         # check the sites file
+#         filename = "share-url.txt"
+#         if os.path.exists(filename):
+#             content = parse_sites(filename)
+#         else:
+#             usage()
+#             sys.exit(1)
+#     else:
+#         content = (args[0] if args else '').split(",")
+
+#     if len(content) == 0 or content[0] == "":
+#         usage()
+#         sys.exit(1)
+
+#     if opts:
+#         for o, val in opts:
+#             if o in ("-nf", "--no-favorite"):
+#                 noFavorite = True
+#                 break
+#     # print(content)
+#     CrawlerScheduler(content)
