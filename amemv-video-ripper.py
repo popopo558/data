@@ -497,7 +497,7 @@ def db_select(sql):
         user=db_config['user'],
         passwd=db_config['passwd'],
         db=db_config['db'],
-        charset='utf8mb4'
+        charset='utf8'
     )
     cur = db.cursor()
     cur.execute(sql)
@@ -515,7 +515,7 @@ def db_update(sql):
         user=db_config['user'],
         passwd=db_config['passwd'],
         db=db_config['db'],
-        charset='utf8mb4'
+        charset='utf8'
     )
     cur = db.cursor()
     cur.execute(sql)
