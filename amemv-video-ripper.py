@@ -306,7 +306,6 @@ class CrawlerScheduler(object):
             sql = "select * from share_urls where url = '%s'" % share_url
             urlinfo = db_select(sql)
             print(urlinfo)
-            print(nickname)
             print(type(nickname))
 
             for item in contentJson['aweme_list']:
@@ -320,7 +319,7 @@ class CrawlerScheduler(object):
                     insert into videos 
                         (user_id, aweme_id, video_url, uri, video_image, height, width, digg_count, share_url_id, dyname, dyaccount, tags_id) 
                     values 
-                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, '', '', 1)
+                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, '%s', '', 1)
                 """ % (
                     user_id,
                     item['statistics']['aweme_id'],
@@ -331,7 +330,7 @@ class CrawlerScheduler(object):
                     item['video']['width'],
                     digg_count,
                     urlinfo[0][0],
-                    # nickname.encode('utf8')
+                    nickname
                 )
                 print(sql)
                 try:
@@ -350,7 +349,7 @@ class CrawlerScheduler(object):
             else:
                 break
 
-        sql = "UPDATE share_urls SET dyname='%s', dyid='%s', video_num=%s, status=2 WHERE url = '%s' " % (nickname.encode('utf8'), uid, video_count, share_url)
+        sql = "UPDATE share_urls SET dyname='%s', dyid='%s', video_num=%s, status=2 WHERE url = '%s' " % (nickname, uid, video_count, share_url)
         db_update(sql)
 
         if not noFavorite:
