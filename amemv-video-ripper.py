@@ -154,7 +154,8 @@ class CrawlerScheduler(object):
         return res.headers['Location']
 
     def generateSignature(self, str):
-        p = os.popen('node fuck-byted-acrawler.js %s' % str)
+
+        p = os.popen('node %s/fuck-byted-acrawler.js %s' % (os.getcwd(), str))
         return p.readlines()[0]
 
     def calculateFileMd5(self, filename):
