@@ -276,7 +276,8 @@ class CrawlerScheduler(object):
         current_folder = os.getcwd()
         target_folder = os.path.join(current_folder, 'download/%s' % user_id)
         if not os.path.isdir(target_folder):
-            os.mkdir(target_folder)
+            pass
+            # os.mkdir(target_folder)
 
         if not user_id:
             print("Number %s does not exist" % user_id)
