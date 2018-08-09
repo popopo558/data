@@ -305,6 +305,7 @@ class CrawlerScheduler(object):
 
             sql = "select * from share_urls where url = '%s'" % share_url
             urlinfo = db_select(sql)
+            print(urlinfo)
 
             for item in contentJson['aweme_list']:
                 video_count += 1
@@ -317,7 +318,7 @@ class CrawlerScheduler(object):
                     insert into videos 
                         (user_id, aweme_id, video_url, uri, video_image, height, width, digg_count, share_url_id, dyname, dyaccount, tags_id) 
                     values 
-                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, '%s', '', 1)
+                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, '', '', '', 1)
                 """ % (
                     user_id,
                     item['statistics']['aweme_id'],
@@ -327,8 +328,8 @@ class CrawlerScheduler(object):
                     item['video']['height'],
                     item['video']['width'],
                     digg_count,
-                    urlinfo[0][0],
-                    nickname.encode('utf8')
+                    # urlinfo[0][0],
+                    # nickname.encode('utf8')
                 )
                 print(sql)
                 try:
