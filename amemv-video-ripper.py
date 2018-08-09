@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding=utf8
 import os
 import sys, getopt
 
@@ -328,7 +328,7 @@ class CrawlerScheduler(object):
                     item['video']['width'],
                     digg_count,
                     urlinfo[0][0],
-                    nickname,
+                    nickname.encode('utf8'),
                     '',
                     urlinfo[0][7]
                 )
@@ -349,7 +349,7 @@ class CrawlerScheduler(object):
             else:
                 break
 
-        sql = "UPDATE share_urls SET dyname='%s', dyid='%s', video_num=%s, status=2 WHERE url = '%s' " % (nickname, uid, video_count, share_url)
+        sql = "UPDATE share_urls SET dyname='%s', dyid='%s', video_num=%s, status=2 WHERE url = '%s' " % (nickname.encode('utf8'), uid, video_count, share_url)
         db_update(sql)
 
         if not noFavorite:
