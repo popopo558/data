@@ -1,7 +1,11 @@
 # coding=utf8
-import os
-import sys, getopt
 
+import sys
+reload(sys) 
+sys.setdefaultencoding('utf-8') 
+
+import os
+import getopt
 import hashlib
 import codecs
 import requests
@@ -11,6 +15,7 @@ from threading import Thread
 import json
 import time
 import MySQLdb
+
 
 # Setting timeout
 TIMEOUT = 10
@@ -155,7 +160,7 @@ class CrawlerScheduler(object):
 
     def generateSignature(self, str):
 
-        p = os.popen('node %s/fuck-byted-acrawler.js %s' % (os.getcwd(), str))
+        p = os.popen('node fuck-byted-acrawler.js %s' % str)
         return p.readlines()[0]
 
     def calculateFileMd5(self, filename):
