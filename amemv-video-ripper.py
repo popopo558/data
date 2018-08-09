@@ -330,7 +330,7 @@ class CrawlerScheduler(object):
                     urlinfo[0][0],
                     nickname.encode('utf8'),
                     '',
-                    urlinfo[0][7]
+                    1
                 )
                 print(sql)
                 try:
