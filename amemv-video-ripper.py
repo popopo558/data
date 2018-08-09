@@ -317,7 +317,7 @@ class CrawlerScheduler(object):
                     insert into videos 
                         (user_id, aweme_id, video_url, uri, video_image, height, width, digg_count, share_url_id, dyname, dyaccount, tags_id) 
                     values 
-                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, '%s', '%s', %s)
+                        ('%s', '%s', '%s', '%s', '%s', %s, %s, %s, %s, '%s', '', 1)
                 """ % (
                     user_id,
                     item['statistics']['aweme_id'],
@@ -328,9 +328,7 @@ class CrawlerScheduler(object):
                     item['video']['width'],
                     digg_count,
                     urlinfo[0][0],
-                    nickname.encode('utf8'),
-                    '',
-                    1
+                    nickname.encode('utf8')
                 )
                 print(sql)
                 try:
