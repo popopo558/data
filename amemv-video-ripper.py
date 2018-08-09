@@ -215,21 +215,21 @@ class CrawlerScheduler(object):
         self.queue.join()
         print("\nAweme number %s, video number %s\n\n" % (number, str(video_count)))
         print("\nFinish Downloading All the videos from %s\n\n" % number)
-        self.checkFile(number)
+        # self.checkFile(number)
 
     def download_challenge_videos(self, challenge):
         video_count = self._download_challenge_media(challenge)
         self.queue.join()
         print("\nAweme challenge #%s, video number %d\n\n" % (challenge, video_count))
         print("\nFinish Downloading All the videos from #%s\n\n" % challenge)
-        self.checkFile('#' + challenge)
+        # self.checkFile('#' + challenge)
 
     def download_music_videos(self, music):
         video_count = self._download_music_media(music)
         self.queue.join()
         print("\nAweme music @%s, video number %d\n\n" % (music, video_count))
         print("\nFinish Downloading All the videos from @%s\n\n" % music)
-        self.checkFile('@' + music)
+        # self.checkFile('@' + music)
 
     def _join_download_queue(self, aweme, target_folder):
         try:
